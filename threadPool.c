@@ -17,13 +17,14 @@ void *execute(void *tp) {
     ThreadPool *threadPool = (ThreadPool *) tp;
     Task* task;
     while(threadPool->canRunTask) {
-        int status = pthread_mutex_lock(&(threadPool->mutex));
-        if (status != 0) {
+        if (pthread_mutex_lock(&(threadPool->mutex)) != 0) {
             print_error();
             tpDestroy(threadPool, 0);
             _exit(EXIT_FAILURE);
         }
-        if (osIsQueueEmpty(threadPool->tasks) && !threadPool->cannotRunTask) {
+        // if the queue is empty and the function tpDestroy didn't activate,
+        // wait new task insert to the queue
+        if (osIsQueueEmpty(threadPool->tasks) && !threadPool->destroy) {
             int wait = pthread_cond_wait(&(threadPool->cond), &(threadPool->mutex));
             if( wait != 0){
                 print_error();
@@ -31,7 +32,8 @@ void *execute(void *tp) {
                 _exit(EXIT_FAILURE);
             }
         }
-        if (osIsQueueEmpty(threadPool->tasks) && threadPool->cannotRunTask && threadPool->canRunTask) {
+        // tpDestroy activated - end run tasks
+        if (osIsQueueEmpty(threadPool->tasks) && threadPool->destroy) {
             break;
         }
         // do task
@@ -42,8 +44,7 @@ void *execute(void *tp) {
             free(task);
         }
     }
-    int mutexUnlock = pthread_mutex_unlock(&(threadPool->mutex));
-    if(mutexUnlock != 0){
+    if(pthread_mutex_unlock(&(threadPool->mutex)) != 0){
         print_error();
         tpDestroy(threadPool, 0);
         _exit(EXIT_FAILURE);
@@ -67,7 +68,7 @@ ThreadPool *tpCreate(int numOfThreads) {
     }
     threadPool->num_of_threads = numOfThreads;
     threadPool->canRunTask = true;
-    threadPool->cannotRunTask = false;
+    threadPool->destroy = false;
     threadPool->tasks = osCreateQueue();
     threadPool->threads = (pthread_t *) malloc(numOfThreads * sizeof(pthread_t));
     if (threadPool->threads == NULL) {
@@ -100,36 +101,44 @@ ThreadPool *tpCreate(int numOfThreads) {
 }
 
 /**
+ * free all the variables that allocated.
+ * @param threadPool - the struct of the thread pool.
+ */
+void free_threadPool(ThreadPool *threadPool) {
+    if (threadPool->threads != NULL) {
+        free(threadPool->threads);
+    }
+    while(!osIsQueueEmpty(threadPool->tasks)) {
+        free(osDequeue(threadPool->tasks));
+    }
+    osDestroyQueue(threadPool->tasks);
+    pthread_mutex_destroy(&threadPool->mutex);
+    pthread_cond_destroy(&threadPool->cond);
+    free(threadPool);
+}
+
+/**
  * destroy the thread pool.
  * @param threadPool - the struct of the thread pool.
  * @param shouldWaitForTasks - 0 if we need to wait just to the tasks that are running now
  * and more than 0 if we need to wait to all the tasks in the queue.
  */
 void tpDestroy(ThreadPool *threadPool, int shouldWaitForTasks) {
-    if (shouldWaitForTasks > 0) {
-        threadPool->canRunTask = true;
-    } else if (shouldWaitForTasks == 0) {
-        threadPool->canRunTask = false;
-    } else {
+    if (threadPool == NULL) {
         return;
     }
-    if (!threadPool->cannotRunTask) {
+    // after the task that are running now end, stop the loop of the threads
+    if (shouldWaitForTasks == 0) {
+        threadPool->canRunTask = false;
+    }
+    if (!threadPool->destroy) {
         pthread_mutex_lock(&threadPool->mutex);
-        threadPool->cannotRunTask = true;
+        threadPool->destroy = true;
         int status1 = pthread_cond_broadcast(&(threadPool->cond));
         int status2 = pthread_mutex_unlock(&(threadPool->mutex));
         if ((status1 != 0) || status2 != 0) {
             // free
-            if (threadPool->threads != NULL) {
-                free(threadPool->threads);
-            }
-            while(!osIsQueueEmpty(threadPool->tasks)) {
-                free(osDequeue(threadPool->tasks));
-            }
-            osDestroyQueue(threadPool->tasks);
-            pthread_mutex_destroy(&threadPool->mutex);
-            pthread_cond_destroy(&threadPool->cond);
-            free(threadPool);
+            free_threadPool(threadPool);
             return;
         }
         if (threadPool->threads != NULL) {
@@ -144,16 +153,7 @@ void tpDestroy(ThreadPool *threadPool, int shouldWaitForTasks) {
         }
     }
     // free
-    if (threadPool->threads != NULL) {
-        free(threadPool->threads);
-    }
-    while(!osIsQueueEmpty(threadPool->tasks)) {
-        free(osDequeue(threadPool->tasks));
-    }
-    osDestroyQueue(threadPool->tasks);
-    pthread_mutex_destroy(&threadPool->mutex);
-    pthread_cond_destroy(&threadPool->cond);
-    free(threadPool);
+    free_threadPool(threadPool);
 }
 
 /**
@@ -165,7 +165,7 @@ void tpDestroy(ThreadPool *threadPool, int shouldWaitForTasks) {
  */
 int tpInsertTask(ThreadPool *threadPool, void (*computeFunc)(void *), void *param) {
     // can't inset new task
-    if (computeFunc == NULL || threadPool == NULL || threadPool->cannotRunTask) {
+    if (computeFunc == NULL || threadPool == NULL || threadPool->destroy) {
         return ERROR;
     }
     // create new task
@@ -176,27 +176,21 @@ int tpInsertTask(ThreadPool *threadPool, void (*computeFunc)(void *), void *para
     }
     t->args = param;
     t->func = computeFunc;
-    // lock mutex
-    int status = pthread_mutex_lock(&threadPool->mutex);
-    // check success
-    if (status != 0) {
+    // lock mutex and check success
+    if (pthread_mutex_lock(&threadPool->mutex) != 0) {
         print_error();
         free(t);
         return ERROR;
     }
     // insert the task to the queue
     osEnqueue(threadPool->tasks, (void *) t);
-    // wake the thread
-    status = pthread_cond_signal(&threadPool->cond);
-    // check success
-    if (status != 0) {
+    // wake the thread and check success
+    if (pthread_cond_signal(&threadPool->cond) != 0) {
         print_error();
         return ERROR;
     }
-    // unlock queue mutex
-    status = pthread_mutex_unlock(&threadPool->mutex);
-    // check success
-    if (status != 0) {
+    // unlock queue mutex and check success
+    if (pthread_mutex_unlock(&threadPool->mutex) != 0) {
         print_error();
         return ERROR;
     }

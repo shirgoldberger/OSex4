@@ -78,13 +78,13 @@
 				</MakeCommands>
 			</Target>
 		</Build>
-		<Unit filename="/home/shirgold/CLionProjects/OSex4/main.c">
-			<Option target="OSex4"/>
-		</Unit>
 		<Unit filename="/home/shirgold/CLionProjects/OSex4/osqueue.c">
 			<Option target="OSex4"/>
 		</Unit>
 		<Unit filename="/home/shirgold/CLionProjects/OSex4/osqueue.h">
+			<Option target="OSex4"/>
+		</Unit>
+		<Unit filename="/home/shirgold/CLionProjects/OSex4/test.c">
 			<Option target="OSex4"/>
 		</Unit>
 		<Unit filename="/home/shirgold/CLionProjects/OSex4/threadPool.c">

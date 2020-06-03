@@ -57,18 +57,18 @@ include CMakeFiles/OSex4.dir/progress.make
 # Include the compile flags for this target's objects.
 include CMakeFiles/OSex4.dir/flags.make
 
-CMakeFiles/OSex4.dir/main.c.o: CMakeFiles/OSex4.dir/flags.make
-CMakeFiles/OSex4.dir/main.c.o: ../main.c
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/shirgold/CLionProjects/OSex4/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building C object CMakeFiles/OSex4.dir/main.c.o"
-	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/OSex4.dir/main.c.o   -c /home/shirgold/CLionProjects/OSex4/main.c
+CMakeFiles/OSex4.dir/test.c.o: CMakeFiles/OSex4.dir/flags.make
+CMakeFiles/OSex4.dir/test.c.o: ../test.c
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/shirgold/CLionProjects/OSex4/cmake-build-debug/CMakeFiles --progress-num=$(CMAKE_PROGRESS_1) "Building C object CMakeFiles/OSex4.dir/test.c.o"
+	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -o CMakeFiles/OSex4.dir/test.c.o   -c /home/shirgold/CLionProjects/OSex4/test.c
 
-CMakeFiles/OSex4.dir/main.c.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/OSex4.dir/main.c.i"
-	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /home/shirgold/CLionProjects/OSex4/main.c > CMakeFiles/OSex4.dir/main.c.i
+CMakeFiles/OSex4.dir/test.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/OSex4.dir/test.c.i"
+	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /home/shirgold/CLionProjects/OSex4/test.c > CMakeFiles/OSex4.dir/test.c.i
 
-CMakeFiles/OSex4.dir/main.c.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/OSex4.dir/main.c.s"
-	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /home/shirgold/CLionProjects/OSex4/main.c -o CMakeFiles/OSex4.dir/main.c.s
+CMakeFiles/OSex4.dir/test.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/OSex4.dir/test.c.s"
+	/usr/bin/cc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /home/shirgold/CLionProjects/OSex4/test.c -o CMakeFiles/OSex4.dir/test.c.s
 
 CMakeFiles/OSex4.dir/threadPool.c.o: CMakeFiles/OSex4.dir/flags.make
 CMakeFiles/OSex4.dir/threadPool.c.o: ../threadPool.c
@@ -98,14 +98,14 @@ CMakeFiles/OSex4.dir/osqueue.c.s: cmake_force
 
 # Object files for target OSex4
 OSex4_OBJECTS = \
-"CMakeFiles/OSex4.dir/main.c.o" \
+"CMakeFiles/OSex4.dir/test.c.o" \
 "CMakeFiles/OSex4.dir/threadPool.c.o" \
 "CMakeFiles/OSex4.dir/osqueue.c.o"
 
 # External object files for target OSex4
 OSex4_EXTERNAL_OBJECTS =
 
-OSex4: CMakeFiles/OSex4.dir/main.c.o
+OSex4: CMakeFiles/OSex4.dir/test.c.o
 OSex4: CMakeFiles/OSex4.dir/threadPool.c.o
 OSex4: CMakeFiles/OSex4.dir/osqueue.c.o
 OSex4: CMakeFiles/OSex4.dir/build.make

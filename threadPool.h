@@ -23,10 +23,10 @@ typedef struct thread_pool {
     // amount of thread
     int num_of_threads;
     pthread_cond_t cond;
-    // true if the function tpDestroy didn't activate
+    // true if we still can run tasks
     bool canRunTask;
     // true if the function tpDestroy activated
-    bool cannotRunTask;
+    bool destroy;
 } ThreadPool;
 
 typedef struct {
