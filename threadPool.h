@@ -11,19 +11,21 @@
 #include <stdio.h>
 
 #define ERROR -1
-
 typedef struct thread_pool {
     // tasks queue
     OSQueue *tasks;
     // mutex for tasks queue
-    pthread_mutex_t queue_mutex;
+    pthread_mutex_t mutex;
     // array of threads
     pthread_t *threads;
     // amount of thread
     int num_of_threads;
-    pthread_mutex_t m;
+    pthread_cond_t cond;
     // true if the function tpDestroy activated
     bool destroy;
+    bool canRun;
+    bool NotRun;
+
 } ThreadPool;
 
 typedef struct {

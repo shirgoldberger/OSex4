@@ -1,4 +1,5 @@
 file(REMOVE_RECURSE
+  "CMakeFiles/OSex4.dir/main.c.o"
   "CMakeFiles/OSex4.dir/osqueue.c.o"
   "CMakeFiles/OSex4.dir/threadPool.c.o"
   "OSex4"

@@ -123,6 +123,33 @@ OSex4/fast:
 	$(MAKE) -f CMakeFiles/OSex4.dir/build.make CMakeFiles/OSex4.dir/build
 .PHONY : OSex4/fast
 
+main.o: main.c.o
+
+.PHONY : main.o
+
+# target to build an object file
+main.c.o:
+	$(MAKE) -f CMakeFiles/OSex4.dir/build.make CMakeFiles/OSex4.dir/main.c.o
+.PHONY : main.c.o
+
+main.i: main.c.i
+
+.PHONY : main.i
+
+# target to preprocess a source file
+main.c.i:
+	$(MAKE) -f CMakeFiles/OSex4.dir/build.make CMakeFiles/OSex4.dir/main.c.i
+.PHONY : main.c.i
+
+main.s: main.c.s
+
+.PHONY : main.s
+
+# target to generate assembly for a file
+main.c.s:
+	$(MAKE) -f CMakeFiles/OSex4.dir/build.make CMakeFiles/OSex4.dir/main.c.s
+.PHONY : main.c.s
+
 osqueue.o: osqueue.c.o
 
 .PHONY : osqueue.o
@@ -186,6 +213,9 @@ help:
 	@echo "... rebuild_cache"
 	@echo "... edit_cache"
 	@echo "... OSex4"
+	@echo "... main.o"
+	@echo "... main.i"
+	@echo "... main.s"
 	@echo "... osqueue.o"
 	@echo "... osqueue.i"
 	@echo "... osqueue.s"
