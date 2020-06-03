@@ -1,21 +1,29 @@
 // shir goldberger 209205798
 #include "threadPool.h"
 
+/**
+ * print error when system call fail.
+ */
 void print_error() {
-    write(2, "Error‬‬ ‫‪in‬‬ ‫‪system‬‬ ‫‪call‬‬", strlen("Error‬‬ ‫‪in‬‬ ‫‪system‬‬ ‫‪call‬‬"));
+    write(2, ERROR_STRING, strlen(ERROR_STRING));
 }
 
+/**
+ * execute the tasks in the queue (all the threads).
+ * @param tp - the struct of the thread pool.
+ * @return nothing.
+ */
 void *execute(void *tp) {
     ThreadPool *threadPool = (ThreadPool *) tp;
     Task* task;
-    while(threadPool->canRun) {
+    while(threadPool->canRunTask) {
         int status = pthread_mutex_lock(&(threadPool->mutex));
         if (status != 0) {
             print_error();
             tpDestroy(threadPool, 0);
             _exit(EXIT_FAILURE);
         }
-        if (osIsQueueEmpty(threadPool->tasks) && !threadPool->NotRun) {
+        if (osIsQueueEmpty(threadPool->tasks) && !threadPool->cannotRunTask) {
             int wait = pthread_cond_wait(&(threadPool->cond), &(threadPool->mutex));
             if( wait != 0){
                 print_error();
@@ -23,7 +31,7 @@ void *execute(void *tp) {
                 _exit(EXIT_FAILURE);
             }
         }
-        if (osIsQueueEmpty(threadPool->tasks) && threadPool->NotRun && threadPool->canRun) {
+        if (osIsQueueEmpty(threadPool->tasks) && threadPool->cannotRunTask && threadPool->canRunTask) {
             break;
         }
         // do task
@@ -41,46 +49,13 @@ void *execute(void *tp) {
         _exit(EXIT_FAILURE);
     }
     return NULL;
-
-
-
-
-
-//    ThreadPool *threadPool = (ThreadPool *) tp;
-//    if (threadPool == NULL) {
-//        print_error();
-//        exit(1);
-//    }
-//    int status;
-//    while (!threadPool->destroy) {
-//        // lock the mutex
-//        status = pthread_mutex_lock(&threadPool->mutex);
-//        if (status != 0) {
-//            print_error();
-//            tpDestroy(threadPool, 0);
-//            _exit(EXIT_FAILURE);
-//        }
-//        if (!osIsQueueEmpty(threadPool->tasks)) {
-//            // run task
-//            Task *t = (Task *) osDequeue(threadPool->tasks);
-//            if (t == NULL) {
-//                continue;
-//            }
-//            t->func(t->args);
-//            free(t);
-//        } else {
-//            status = pthread_mutex_unlock(&threadPool->mutex);
-//            // check success
-//            if (status != 0) {
-//                print_error();
-//                tpDestroy(threadPool, 0);
-//                _exit(EXIT_FAILURE);
-//            }
-//        }
-//    }
-//    return NULL;
 }
 
+/**
+ * create a new thread pool.
+ * @param numOfThreads - number of threads in the thread pool.
+ * @return new thread pool.
+ */
 ThreadPool *tpCreate(int numOfThreads) {
     if (numOfThreads <= 0) {
         return NULL;
@@ -91,9 +66,8 @@ ThreadPool *tpCreate(int numOfThreads) {
         _exit(EXIT_FAILURE);
     }
     threadPool->num_of_threads = numOfThreads;
-    threadPool->destroy = false;
-    threadPool->NotRun = false;
-    threadPool->canRun = true;
+    threadPool->canRunTask = true;
+    threadPool->cannotRunTask = false;
     threadPool->tasks = osCreateQueue();
     threadPool->threads = (pthread_t *) malloc(numOfThreads * sizeof(pthread_t));
     if (threadPool->threads == NULL) {
@@ -106,6 +80,12 @@ ThreadPool *tpCreate(int numOfThreads) {
     int status = pthread_cond_init(&(threadPool->cond), NULL);
     if (status != 0) {
         print_error();
+        _exit(EXIT_FAILURE);
+    }
+    status = pthread_mutex_init(&threadPool->mutex, NULL);
+    if (status != 0) {
+        print_error();
+        _exit(EXIT_FAILURE);
     }
     // initialize threads
     int i;
@@ -119,22 +99,23 @@ ThreadPool *tpCreate(int numOfThreads) {
     return threadPool;
 }
 
+/**
+ * destroy the thread pool.
+ * @param threadPool - the struct of the thread pool.
+ * @param shouldWaitForTasks - 0 if we need to wait just to the tasks that are running now
+ * and more than 0 if we need to wait to all the tasks in the queue.
+ */
 void tpDestroy(ThreadPool *threadPool, int shouldWaitForTasks) {
-    if (threadPool->destroy) {
-        return;
-    }
     if (shouldWaitForTasks > 0) {
-        threadPool->canRun = true;
+        threadPool->canRunTask = true;
     } else if (shouldWaitForTasks == 0) {
-        threadPool->canRun = false;
+        threadPool->canRunTask = false;
     } else {
         return;
     }
-    // wait for tasks that run now
-    // then, destroy the thread pool
-    if (!threadPool->NotRun) {
+    if (!threadPool->cannotRunTask) {
         pthread_mutex_lock(&threadPool->mutex);
-        threadPool->NotRun = true;
+        threadPool->cannotRunTask = true;
         int status1 = pthread_cond_broadcast(&(threadPool->cond));
         int status2 = pthread_mutex_unlock(&(threadPool->mutex));
         if ((status1 != 0) || status2 != 0) {
@@ -175,8 +156,16 @@ void tpDestroy(ThreadPool *threadPool, int shouldWaitForTasks) {
     free(threadPool);
 }
 
+/**
+ * insert new task to the queue.
+ * @param threadPool - the struct of the thread pool.
+ * @param computeFunc - the task we want to execute.
+ * @param param - the parameters to the task.
+ * @return 0 if the task inserted to the queue and -1 otherwise.
+ */
 int tpInsertTask(ThreadPool *threadPool, void (*computeFunc)(void *), void *param) {
-    if (computeFunc == NULL || threadPool == NULL || threadPool->NotRun) {
+    // can't inset new task
+    if (computeFunc == NULL || threadPool == NULL || threadPool->cannotRunTask) {
         return ERROR;
     }
     // create new task
@@ -187,7 +176,7 @@ int tpInsertTask(ThreadPool *threadPool, void (*computeFunc)(void *), void *para
     }
     t->args = param;
     t->func = computeFunc;
-    // lock queue mutex
+    // lock mutex
     int status = pthread_mutex_lock(&threadPool->mutex);
     // check success
     if (status != 0) {
@@ -197,7 +186,7 @@ int tpInsertTask(ThreadPool *threadPool, void (*computeFunc)(void *), void *para
     }
     // insert the task to the queue
     osEnqueue(threadPool->tasks, (void *) t);
-
+    // wake the thread
     status = pthread_cond_signal(&threadPool->cond);
     // check success
     if (status != 0) {
