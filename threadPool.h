@@ -11,7 +11,8 @@
 #include <stdio.h>
 
 #define ERROR -1
-#define ERROR_STRING "Error‬‬ ‫‪in‬‬ ‫‪system‬‬ ‫‪call\n‬‬"
+#define ERROR_STRING "Error‬‬ ‫‪in library function\n‬‬"
+#define ERROR_SYSCALL "Error‬‬ ‫‪in‬‬ ‫‪system‬‬ ‫‪call\n‬‬"
 
 typedef struct thread_pool {
     // tasks queue

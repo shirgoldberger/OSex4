@@ -38,7 +38,11 @@ void *execute(void *tp) {
         }
         // do task
         task = (Task *) osDequeue(threadPool->tasks);
-        pthread_mutex_unlock(&(threadPool->mutex));
+        if(pthread_mutex_unlock(&(threadPool->mutex)) != 0){
+            print_error();
+            tpDestroy(threadPool, 0);
+            _exit(EXIT_FAILURE);
+        }
         if (task != NULL) {
             (task->func)(task->args);
             free(task);
