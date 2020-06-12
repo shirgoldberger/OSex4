@@ -1,4 +1,5 @@
 // shir goldberger 209205798
+#include <errno.h>
 #include "threadPool.h"
 
 /**
@@ -96,7 +97,12 @@ ThreadPool *tpCreate(int numOfThreads) {
     int i;
     for (i = 0; i < numOfThreads; i++) {
         if (pthread_create(&(threadPool->threads[i]), NULL, execute, threadPool) != 0) {
+            threadPool->num_of_threads = i;
             tpDestroy(threadPool, 0);
+            if (errno == EAGAIN) {
+                perror("Resource temporarily unavailable\n");
+                _exit(EXIT_FAILURE);
+            }
             print_error();
             _exit(EXIT_FAILURE);
         }
@@ -151,6 +157,7 @@ void tpDestroy(ThreadPool *threadPool, int shouldWaitForTasks) {
             for (i = 0; i < threadPool->num_of_threads; i++) {
                 if (pthread_join(threadPool->threads[i], NULL) != 0) {
                     print_error();
+                    free_threadPool(threadPool);
                     _exit(EXIT_FAILURE);
                 }
             }

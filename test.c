@@ -21,7 +21,7 @@ void test_thread_pool_sanity()
 {
    int i;
    
-   ThreadPool* tp = tpCreate(5);
+   ThreadPool* tp = tpCreate(999999999);
    
 
    tpInsertTask(tp,hello1,NULL);
